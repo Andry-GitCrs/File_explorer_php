@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Cool File Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+      body{background:#1e1e2f;color:#fff}
+      .sidebar{background:#27293d;min-height:100vh}
+      .nav-link{color:#fff}
+      .nav-link:hover{background:#3a3b5c}
+      .file-item{cursor:pointer}
+      .file-item:hover{background:#3a3b5c}
+      .breadcrumb-item a{text-decoration:none;color:#ff8a00}
+      #editor{height:60vh;background:#1e1e2f;color:#fff;border:1px solid #444}
+      .modal-content{background:#27293d;color:#fff}
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <!-- LEFT TREE -->
+    <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+      <div class="pt-3">
+        <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="createItem('file')"><i class="bi bi-file-earmark-plus"></i> Nouveau fichier</button>
+        <button class="btn btn-sm btn-outline-success w-100 mb-2" onclick="createItem('dir')"><i class="bi bi-folder-plus"></i> Nouveau dossier</button>
+      </div>
+      <div id="tree" class="list-group mt-3"></div>
+    </nav>
+
+    <!-- MAIN PANEL -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <nav aria-label="breadcrumb">
+          <ol id="breadcrumb" class="breadcrumb mb-0"></ol>
+        </nav>
+      </div>
+
+      <div id="fileList" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2"></div>
+
+      <!-- Editor Modal -->
+      <div class="modal fade" id="editorModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="editorTitle" class="modal-title"></h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <textarea id="editor" class="form-control"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button class="btn btn-primary" onclick="saveFile()">Sauvegarder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context Menu -->
+      <ul id="ctx" class="dropdown-menu" style="position:absolute;display:none;">
+        <li><a class="dropdown-item" href="#" onclick="renamePrompt()"><i class="bi bi-pencil"></i> Renommer</a></li>
+        <li><a class="dropdown-item" href="#" onclick="copyPrompt()"><i class="bi bi-files"></i> Copier</a></li>
+        <li><a class="dropdown-item" href="#" onclick="movePrompt()"><i class="bi bi-arrows-move"></i> Déplacer</a></li>
+        <li><a class="dropdown-item text-danger" href="#" onclick="deletePrompt()"><i class="bi bi-trash"></i> Supprimer</a></li>
+      </ul>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ---------- STATE ---------- */
+let currentPath = 'data';
+let selectedItem = null;
+
+/* ---------- HELPERS ---------- */
+const api = (action, params={}, method='GET', body=null)=> {
+  const url = new URL('api.php', location.href);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  return fetch(url, {method, body}).then(r=>r.json());
+};
+
+const basename = p=>p.split('/').pop();
+const dirname  = p=>p.split('/').slice(0,-1).join('/') || 'data';
+
+/* ---------- RENDER ---------- */
+async function ls(path){
+  currentPath = path;
+  const items = await api('ls',{path});
+  renderBreadcrumb(path);
+  const list = document.getElementById('fileList');
+  list.innerHTML='';
+  items.forEach(item=>{
+    const col=document.createElement('div');
+    col.className='col';
+    col.innerHTML=`
+      <div class="file-item border-secondary" data-path="${item.path}" data-type="${item.type}">
+        <div class="card-body text-center py-2">
+          <i class="text-light bi ${item.type==='dir'?'bi-folder-fill':'bi-file-earmark-text'} fs-1"></i>
+          <div class="mt-2 text-light">${item.name}</div>
+          <small class="" style="color: #aaa">${item.type==='file' ? (item.size+' bytes') : ''}</small>
+        </div>
+      </div>`;
+    col.onclick = ()=>{ openItem(item); };
+    col.oncontextmenu = (e)=>{ e.preventDefault(); showCtx(e, item); };
+    list.append(col);
+  });
+}
+
+function renderBreadcrumb(p){
+  const parts = p.split('/');
+  let acc = '';
+  const html = parts.map((part,i)=>{
+    acc += (i? '/' : '') + part;
+    return `<li class="breadcrumb-item"><a href="#" onclick="ls('${acc}')">${part}</a></li>`;
+  }).join('');
+  document.getElementById('breadcrumb').innerHTML = html;
+}
+
+function openItem(item){
+  if(item.type==='dir') return ls(item.path);
+  selectedItem = item;
+  api('read',{path:item.path}).then(r=>{
+    document.getElementById('editorTitle').textContent = basename(item.path);
+    document.getElementById('editor').value = r.content || '';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('editorModal')).show();
+  });
+}
+
+/* ---------- CREATE ---------- */
+function createItem(type){
+  const name = prompt("Nom ?");
+  if(!name) return;
+  const dest = currentPath + '/' + name;
+  api(type==='file' ? 'createFile':'createDir', {path:dest})
+    .then(()=>ls(currentPath));
+}
+
+/* ---------- ACTIONS ---------- */
+function saveFile(){
+  api('write',{path:selectedItem.path},'POST',document.getElementById('editor').value)
+    .then(()=>bootstrap.Modal.getInstance(document.getElementById('editorModal')).hide());
+}
+
+function deletePrompt(){
+  if(!confirm('Supprimer '+basename(selectedItem.path)+' ?')) return;
+  api('delete',{path:selectedItem.path}).then(()=>ls(currentPath));
+  hideCtx();
+}
+
+function renamePrompt(){
+  const newName = prompt('Nouveau nom', basename(selectedItem.path));
+  if(!newName) return;
+  api('rename',{path:selectedItem.path,target:dirname(selectedItem.path)+'/'+newName})
+    .then(()=>ls(currentPath));
+  hideCtx();
+}
+
+function copyPrompt(){
+  const dest = prompt('Copier vers (chemin complet)', selectedItem.path + '_copie');
+  if(!dest) return;
+  api('copy',{path:selectedItem.path,target:dest}).then(()=>ls(currentPath));
+  hideCtx();
+}
+
+function movePrompt(){
+  const dest = prompt('Déplacer vers (chemin complet)', selectedItem.path);
+  if(!dest) return;
+  api('move',{path:selectedItem.path,target:dest}).then(()=>ls(dirname(selectedItem.path)));
+  hideCtx();
+}
+
+/* ---------- CONTEXT MENU ---------- */
+function showCtx(e, item){
+  selectedItem=item;
+  const ctx=document.getElementById('ctx');
+  ctx.style.top=e.pageY+'px';
+  ctx.style.left=e.pageX+'px';
+  ctx.style.display='block';
+}
+function hideCtx(){ document.getElementById('ctx').style.display='none'; }
+document.onclick=hideCtx;
+
+/* ---------- INIT ---------- */
+ls(currentPath);
+</script>
+</body>
+</html>
