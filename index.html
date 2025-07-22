@@ -154,7 +154,7 @@ function saveFile(){
 }
 
 function deletePrompt(){
-  if(!confirm('Supprimer '+basename(selectedItem.path)+' ?')) return;
+  if(!confirm('Vous voulez Supprimer '+basename(selectedItem.path)+' ?')) return;
   api('delete',{path:selectedItem.path}).then(()=>ls(currentPath));
   hideCtx();
 }
