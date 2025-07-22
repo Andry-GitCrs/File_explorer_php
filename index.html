@@ -32,7 +32,7 @@
 
     <!-- MAIN PANEL -->
     <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom border-secondary border-2">
         <nav aria-label="breadcrumb">
           <ol id="breadcrumb" class="breadcrumb mb-0"></ol>
         </nav>
@@ -94,15 +94,22 @@ async function ls(path){
   renderBreadcrumb(path);
   const list = document.getElementById('fileList');
   list.innerHTML='';
+
+  if(!items.length){
+    list.innerHTML='<div class="col-12 mx-auto my-5 text-center" style="color: #aaa"> <i class="bi bi-folder2"></i> Le dossier est vide</div>';
+    return;
+  }
+
   items.forEach(item=>{
     const col=document.createElement('div');
     col.className='col';
     col.innerHTML=`
-      <div class="file-item border-secondary" data-path="${item.path}" data-type="${item.type}">
+      <div class=" rounded-3 file-item border-secondary" data-path="${item.path}" data-type="${item.type}">
         <div class="card-body text-center py-2">
           <i class="text-light bi ${item.type==='dir'?'bi-folder-fill':'bi-file-earmark-text'} fs-1"></i>
           <div class="mt-2 text-light">${item.name}</div>
           <small class="" style="color: #aaa">${item.type==='file' ? (item.size+' bytes') : ''}</small>
+          <div class="" style="color: #aaa; font-size: 0.8em">${item.date}</div>
         </div>
       </div>`;
     col.onclick = ()=>{ openItem(item); };

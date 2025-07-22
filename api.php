@@ -1,7 +1,7 @@
 <?php
 header("Content-Type: application/json");
 require_once "functions.php";          
-
+date_default_timezone_set('Africa/Nairobi');
 $action = $_GET['action'] ?? '';
 $path   = $_GET['path']   ?? '';
 $target = $_GET['target'] ?? '';       // for copy / move / rename destination
@@ -17,7 +17,8 @@ try {
                     'name' => basename($f),
                     'type' => is_dir($f) ? 'dir' : 'file',
                     'size' => is_file($f) ? filesize($f) : 0,
-                    'path' => $f
+                    'path' => $f,
+                    'date' => date("F d Y H:i:s", filemtime($f))
                 ];
             }, glob($real . '/*'));
             echo json_encode($items);
