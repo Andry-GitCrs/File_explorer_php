@@ -50,7 +50,7 @@ function writeFileContent($filePath, $content) { // Fonction pour écrire du con
         file_put_contents($filePath, $content); // Écrit le contenu dans le fichier
         return [
             'status' => 'success',
-            'msg' => 'Contenu écrit avec succès.'
+            'msg' => 'Contenu modifié avec succès.'
         ];
     }
     return [

@@ -10,9 +10,9 @@
       body{background:#1e1e2f;color:#fff}
       .sidebar{background:#27293d;min-height:100vh}
       .nav-link{color:#fff}
-      .nav-link:hover{background:#3a3b5c}
-      .file-item{cursor:pointer}
-      .file-item:hover{background:#3a3b5c}
+      .nav-link:hover{background: #3a3b5c}
+      .file-item{cursor:pointer; border: 2px solid transparent!important;}
+      .file-item:hover{border: 2px solid #3a3b5c!important; transition: border-color 0.3s;}
       .breadcrumb-item a{text-decoration:none;color:#ff8a00}
       #editor{height:60vh;background:#1e1e2f;color:#fff;border:1px solid #444}
       .modal-content{background:#27293d;color:#fff}
@@ -125,12 +125,12 @@
         col.className='col-md-3 col-6 p-2';
         col.innerHTML=`
           <div class="rounded-3 file-item border-secondary" data-path="${item.path}" data-type="${item.type}">
-            <div class="card-body text-center py-2">
+            <div class="card-body text-center p-2">
               ${
                 item.type === 'file' && isImage(item.name)
                   ? `<img onclick="window.open('preview.php?path=${encodeURIComponent(item.path)}', '_blank')" src="preview.php?path=${encodeURIComponent(item.path)}" alt="${item.name}" class="p-0 img-thumbnail" style="max-width: 100px; max-height: 100px;">`
                   : item.type === 'dir'
-                    ? `<i class="bi bi-folder-fill text-warning fs-1"></i>`
+                    ? `<i class="bi bi-folder text-warning fs-1"></i>`
                     : `<i class="bi ${getFileIconClass(item.name)} fs-1"></i>`
               }
               <div class="mt-2 text-light text-truncate">${item.name}</div>
