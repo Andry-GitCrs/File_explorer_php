@@ -100,8 +100,8 @@ async function ls(path){
     return;
   }
 
-  items.forEach(item=>{
-    const col=document.createElement('div');
+  items.forEach(item => {
+    const col = document.createElement('div');
     col.className='col';
     col.innerHTML=`
       <div class=" rounded-3 file-item border-secondary" data-path="${item.path}" data-type="${item.type}">
