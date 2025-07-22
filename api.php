@@ -25,41 +25,39 @@ try {
             break;
 
         case 'read':
-            echo json_encode(['content' => readFileContent($path)]);
+            echo json_encode(readFileContent($path));
             break;
 
         case 'write':
-            echo json_encode(['msg' => writeFileContent($path, $content)]);
+            echo json_encode(writeFileContent($path, $content));
             break;
 
         case 'append':
-            echo json_encode(['msg' => appendFileContent($path, $content)]);
+            echo json_encode(appendFileContent($path, $content));
             break;
 
         case 'createFile':
-            echo json_encode(['msg' => createFile($path)]);
+            echo json_encode(createFile($path));
             break;
 
         case 'createDir':
-            echo json_encode(['msg' => createDirectory($path)]);
+            echo json_encode(createDirectory($path));
             break;
 
         case 'delete':
-            echo json_encode(['msg' => is_dir($path)
-                ? (rmdir($path) ? "Répertoire supprimé" : "Erreur suppression répertoire")
-                : deleteFile($path)]);
+            echo json_encode(deleteFile($path));
             break;
 
         case 'rename':
-            echo json_encode(['msg' => renameFile($path, $target)]);
+            echo json_encode(renameFile($path, $target));
             break;
 
         case 'copy':
-            echo json_encode(['msg' => copyFile($path, $target)]);
+            echo json_encode(copyFile($path, $target));
             break;
 
         case 'move':
-            echo json_encode(['msg' => moveFile($path, $target)]);
+            echo json_encode(moveFile($path, $target));
             break;
 
         default:
