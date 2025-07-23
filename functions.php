@@ -26,15 +26,17 @@ function createFile($filePath) {
 
 // Fonction pour lire le contenu d'un fichier
 function readFileContent($filePath) { 
+    if (!is_readable($filePath)) { // Vérifie si le fichier est lisible
+        return [
+            'status' => 'error',
+            'msg' => 'Le fichier n\'est pas lisible.'
+        ];
+    }
+
     if (file_exists($filePath)) { // Vérifie si le fichier existe
-        if (!is_readable($filePath)) { // Vérifie si le fichier est lisible
-            return [
-                'status' => 'error',
-                'msg' => 'Le fichier n\'est pas lisible.'
-            ];
-        }
         return [
             'status' => 'success',
+            'msg' => 'Contenu du fichier:',
             'content' => file_get_contents($filePath) // Lit le contenu du fichier
         ]; // Lit le contenu du fichier et le retourne
     }
@@ -76,33 +78,48 @@ function appendFileContent($filePath, $content) {
 
 // Fonction pour supprimer un fichier
 function deleteFile($filePath) {
-    if (file_exists($filePath)) { // Vérifie si le fichier existe
-        if (unlink($filePath)) { // Supprime le fichier
+    if (file_exists($filePath)) {
+        // Si c'est un fichier, on utilise unlink
+        if (is_file($filePath)) {
+            if (unlink($filePath)) {
+                return [
+                    'status' => 'success',
+                    'msg' => 'Fichier supprimé avec succès.'
+                ];
+            }
             return [
-                'status' => 'success',
-                'msg' => 'Fichier supprimé avec succès.'
+                'status' => 'error',
+                'msg' => 'Erreur lors de la suppression du fichier.'
             ];
         }
-        return [
-            'status' => 'error',
-            'msg' => 'Erreur lors de la suppression du fichier.'
-        ]; // Retourne un message si la suppression échoue
-    }else if(is_dir($filePath)) {
-        if(rmdir($filePath)){
+
+        // Si c'est un dossier, suppression récursive
+        if (is_dir($filePath)) {
+            $files = array_diff(scandir($filePath), ['.', '..']);
+            foreach ($files as $file) {
+                $fullPath = $filePath . DIRECTORY_SEPARATOR . $file;
+                $result = deleteFile($fullPath);
+                if ($result['status'] === 'error') {
+                    return $result;
+                }
+            }
+            if (rmdir($filePath)) {
+                return [
+                    'status' => 'success',
+                    'msg' => 'Dossier supprimé avec succès.'
+                ];
+            }
             return [
-                'status' => 'success',
-                'msg' => 'Dossier supprimé avec succès.'
+                'status' => 'error',
+                'msg' => 'Erreur lors de la suppression du dossier.'
             ];
         }
-        return [
-            'status' => 'error',
-            'msg' => 'Erreur lors de la suppression du dossier'
-        ];        
     }
+
     return [
         'status' => 'error',
-        'msg' => 'Le fichier n\'existe pas.'
-    ]; // Retourne un message si le fichier n'existe pas
+        'msg' => 'Le fichier ou dossier n\'existe pas.'
+    ];
 }
 
 // Fonction pour renommer un fichier
