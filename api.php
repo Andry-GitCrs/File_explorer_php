@@ -9,18 +9,29 @@ $content= file_get_contents("php://input");
 
 try {
     switch ($action) {
-        case 'ls':      // list directory
+        case 'ls':
+            if ($path === 'desktop') {
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $desktop = trim(shell_exec('powershell -command "[Environment]::GetFolderPath(\'Desktop\')"'));
+                    $path = $desktop;
+                } else {
+                    $path = getenv("HOME") . "/Desktop";
+                }
+            }
+
             $real = realpath($path) ?: realpath('data');
             if (!is_dir($real)) throw new Exception("Invalid dir");
-            $items = array_map(function ($f) use ($real) {
+
+            $items = array_map(function ($f) {
                 return [
                     'name' => basename($f),
                     'type' => is_dir($f) ? 'dir' : 'file',
                     'size' => is_file($f) ? filesize($f) : 0,
                     'path' => $f,
-                    'date' => date("F d Y H:i:s", filemtime($f))
+                    'date' => date("F d Y H:i:s", filemtime($f)),
                 ];
             }, glob($real . '/*'));
+
             echo json_encode($items);
             break;
 
@@ -63,7 +74,10 @@ try {
         default:
             throw new Exception("Action inconnue");
     }
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(400);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode([
+        'status' => 'error',
+        'msg' => 'Erreur serveur : ' . $e->getMessage()
+    ]);
 }

@@ -105,6 +105,7 @@
       const list = document.getElementById('fileList');
       list.innerHTML='';
 
+
       if(!items.length){
         list.innerHTML='<div class="col-12 mx-auto my-5 text-center" style="color: #aaa"> <i class="bi bi-folder2"></i> Le dossier est vide</div>';
         return;
@@ -129,8 +130,8 @@
               <div class="" style="color: #aaa; font-size: 0.8em">${item.date}</div>
             </div>
           </div>`;
-        col.onclick = ()=>{ openItem(item); };
-        col.oncontextmenu = (e)=>{ e.preventDefault(); showCtx(e, item); };
+        col.onclick = () => { openItem(item); };
+        col.oncontextmenu = (e) => { e.preventDefault(); showCtx(e, item); };
         list.append(col);
       });
     }
@@ -148,15 +149,26 @@
       document.getElementById('breadcrumb').innerHTML = html;
     }
 
-    async function openItem(item){
-      if(item.type==='dir') return ls(item.path);
+
+    // ---------- OPEN ----------
+    async function openItem(item) {
+      if (item.type === 'dir') return ls(item.path);
       selectedItem = item;
-      const res = await api('read',{path:item.path}).then(res => {
+
+      try {
+        const res = await api('read', { path: item.path });
+
+        showNotification(res.status, res.msg);
+
         document.getElementById('editorTitle').textContent = basename(item.path);
-        // showNotification(res.status, res.msg);
         document.getElementById('editor').value = res.content || '';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('editorModal')).show();
-      });
+        return;
+
+      } catch (err) {
+        console.log(err);
+        if (err) showNotification('error', 'Impossible d’ouvrir le fichier.');
+      }
     }
 
     /* ---------- CREATE ---------- */
